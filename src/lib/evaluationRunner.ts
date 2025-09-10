@@ -86,8 +86,6 @@ export async function runSequentialEvaluation(
 
         const { text } = await generateText(generateTextOptions);
 
-        console.log(`Generated text: ${text}`);
-
         // Validate response is not empty
         if (!text || text.trim() === "") {
           throw new Error(
