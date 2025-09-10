@@ -20,6 +20,26 @@
     {
       "path": "/api/evals/models/cmfe1gk4o001esba4qxpvtmu6",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p002osba4scgd7bnv",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p0031sba4m1zcblmy",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p002msba4sequg6oc",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p002jsba4t694c3dw",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p002gsba4ifki0qrp",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
