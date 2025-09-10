@@ -4,6 +4,10 @@
     {
       "path": "/api/evals/models/cmfe1gk4r0062sba45b47gilw",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4r006csba4k6trl16u",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

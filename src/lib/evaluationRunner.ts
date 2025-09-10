@@ -47,12 +47,23 @@ export async function runSequentialEvaluation(
     // Resolve the AI model
     const aiModel = await resolveAIModel(modelId);
 
+    // Get model details to check temperature support
+    const model = await prisma.model.findUnique({
+      where: { id: modelId },
+      select: { supportsTemperature: true },
+    });
+
+    if (!model) {
+      throw new Error(`Model not found: ${modelId}`);
+    }
+
     const promptBuilder = new SequentialPromptBuilder(QUANTIZATION_CHAIN);
     const answers: Record<string, string> = {};
     const promptResponses: PromptResponseData[] = [];
 
     let successfulTests = 0;
     let failedTests = 0;
+    let consecutiveFailures = 0;
 
     // SEQUENTIAL EXECUTION - each step depends on previous answers
     for (let step = 1; step <= promptBuilder.getTotalSteps(); step++) {
@@ -60,26 +71,57 @@ export async function runSequentialEvaluation(
       const stepStartTime = Date.now();
 
       try {
-        const { text } = await generateText({
+        // Build generateText options conditionally based on temperature support
+        const generateTextOptions: Parameters<typeof generateText>[0] = {
           model: aiModel,
           prompt,
           system: promptBuilder.getSystemPrompt(),
-          maxOutputTokens: 50,
-          temperature: 0,
-        });
+          maxOutputTokens: 1024,
+        };
+
+        // Only include temperature if the model supports it
+        if (model.supportsTemperature) {
+          generateTextOptions.temperature = 0;
+        }
+
+        const { text } = await generateText(generateTextOptions);
+
+        console.log(`Generated text: ${text}`);
+
+        // Validate response is not empty
+        if (!text || text.trim() === "") {
+          throw new Error(
+            `Model returned empty response at step ${step}. This may indicate an invalid model name or API issue.`,
+          );
+        }
 
         const responseTime = Date.now() - stepStartTime;
         const extractedAnswer = extractAnswerFromResponse(text);
 
+        if (!extractedAnswer || extractedAnswer.trim() === "") {
+          throw new Error(
+            `Model returned invalid response at step ${step}. This may indicate an invalid model name or API issue.`,
+          );
+        }
+
         // Store this step's answer for next iteration
-        const answerValue = extractedAnswer || "ERROR";
+        const answerValue = extractedAnswer;
         answers[`ANSWER_${step}`] = answerValue;
 
         // Track success/failure
         if (extractedAnswer) {
           successfulTests++;
+          consecutiveFailures = 0; // Reset consecutive failures on success
         } else {
           failedTests++;
+          consecutiveFailures++;
+
+          // Fail fast if we get too many consecutive failures
+          if (consecutiveFailures >= 3) {
+            throw new Error(
+              `Evaluation terminated after ${consecutiveFailures} consecutive failures at step ${step}. Model may not be working correctly.`,
+            );
+          }
         }
 
         // Store prompt response data
@@ -97,6 +139,7 @@ export async function runSequentialEvaluation(
 
         answers[`ANSWER_${step}`] = "ERROR";
         failedTests++;
+        consecutiveFailures++;
 
         promptResponses.push({
           stepNumber: step,

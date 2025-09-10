@@ -10,16 +10,36 @@ export interface PromptResponseData {
 }
 
 export function extractAnswerFromResponse(response: string): string | null {
+  // Check for empty response
+  if (!response || response.trim() === "") {
+    console.warn("Empty response received from model");
+    return null;
+  }
+
   try {
+    // First try to find JSON in the response
     const jsonMatch = response.match(/\{[^}]+\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.answer || null;
+      if (parsed.answer && typeof parsed.answer === "string") {
+        return parsed.answer.trim();
+      }
     }
 
+    // Try parsing the entire response as JSON
     const parsed = JSON.parse(response.trim());
-    return parsed.answer || null;
-  } catch {
+    if (parsed.answer && typeof parsed.answer === "string") {
+      return parsed.answer.trim();
+    }
+
+    console.warn(
+      `JSON response missing 'answer' field: ${response.substring(0, 100)}...`,
+    );
+    return null;
+  } catch (error) {
+    console.warn(
+      `Failed to parse JSON response: "${response.substring(0, 100)}..."`,
+    );
     return null;
   }
 }
