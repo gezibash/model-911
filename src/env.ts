@@ -8,7 +8,7 @@ export const env = createEnv({
    */
   server: {
     DATABASE_URL: z.string().min(1),
-    OPEN_AI_API_KEY: z.string().min(1),
+    OPENAI_API_KEY: z.string().min(1),
     ANTHROPIC_API_KEY: z.string().min(1),
     CRON_SECRET: z.string().min(1).optional(),
   },
@@ -29,7 +29,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
-    OPEN_AI_API_KEY: process.env.OPEN_AI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     CRON_SECRET: process.env.CRON_SECRET,

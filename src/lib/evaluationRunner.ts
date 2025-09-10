@@ -1,14 +1,17 @@
 import { generateText } from "ai";
-import { SequentialPromptBuilder, QUANTIZATION_CHAIN } from "./promptBuilder";
+import { EvaluationStatus } from "../generated/prisma";
 import {
-  extractAnswerFromResponse,
   calculateFingerprint,
-  PromptResponseData,
+  extractAnswerFromResponse,
+  type PromptResponseData,
 } from "./fingerprintUtils";
-import { buildFinalSentence } from "./promptBuilder";
 import { resolveAIModel } from "./modelResolver";
 import { prisma } from "./prisma";
-import { EvaluationStatus } from "../generated/prisma";
+import {
+  buildFinalSentence,
+  QUANTIZATION_CHAIN,
+  SequentialPromptBuilder,
+} from "./promptBuilder";
 
 export interface EvaluationSession {
   evaluationId: string;
