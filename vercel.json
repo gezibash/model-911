@@ -8,6 +8,10 @@
     {
       "path": "/api/evals/models/cmfe1gk4r006csba4k6trl16u",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4r005vsba4kisycjjp",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
