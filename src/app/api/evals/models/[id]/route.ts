@@ -6,7 +6,7 @@ const controller = new EvaluationController();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Verify cron authentication (optional but recommended)
@@ -15,7 +15,7 @@ export async function GET(
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const modelId = params.id;
+    const { id: modelId } = await params;
 
     // Run evaluation for specific model
     const result = await controller.runEvaluationByModelId(modelId);
@@ -26,14 +26,15 @@ export async function GET(
       data: result.data,
     });
   } catch (error) {
-    console.error(`Cron evaluation error for model ${params.id}:`, error);
+    const { id: modelId } = await params;
+    console.error(`Cron evaluation error for model ${modelId}:`, error);
 
     if (error instanceof Error) {
       return NextResponse.json(
         {
           success: false,
           error: error.message,
-          modelId: params.id,
+          modelId,
         },
         { status: error.message === "Model not found" ? 404 : 500 },
       );
@@ -43,7 +44,7 @@ export async function GET(
       {
         success: false,
         error: "Internal server error",
-        modelId: params.id,
+        modelId,
       },
       { status: 500 },
     );
