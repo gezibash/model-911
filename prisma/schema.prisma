@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "anthropic", "openai", "google"
+  displayName String   @map("display_name") // e.g., "Anthropic", "OpenAI", "Google"
+  apiBaseUrl  String?  @map("api_base_url") // Base URL for API calls
+  npmPackage  String?  @map("npm_package") // e.g., "@ai-sdk/anthropic"
+  envVars     String[] @map("env_vars") // Required environment variables
+  docUrl      String?  @map("doc_url") // Documentation URL
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  models Model[]
+
+  @@map("providers")
+}
+
+model Model {
+  id          String  @id @default(cuid())
+  name        String // e.g., "claude-3-5-sonnet-20241022"
+  displayName String  @map("display_name") // e.g., "Claude 3.5 Sonnet"
+  version     String? // e.g., "20241022"
+  providerId  String  @map("provider_id")
+
+  // Capabilities
+  supportsAttachments Boolean @default(false) @map("supports_attachments")
+  supportsReasoning   Boolean @default(false) @map("supports_reasoning")
+  supportsTemperature Boolean @default(true) @map("supports_temperature")
+  supportsToolCall    Boolean @default(false) @map("supports_tool_call")
+  supportsStreaming   Boolean @default(false) @map("supports_streaming")
+
+  // Context and limits
+  contextLimit Int? @map("context_limit") // Maximum context window
+  outputLimit  Int? @map("output_limit") // Maximum output tokens
+
+  // Model metadata
+  knowledgeCutoff  String?   @map("knowledge_cutoff") // e.g., "2024-04-30"
+  releaseDate      DateTime? @map("release_date")
+  lastUpdated      DateTime? @map("last_updated")
+  inputModalities  String[]  @map("input_modalities") // ["text", "image", "audio", "video", "pdf"]
+  outputModalities String[]  @map("output_modalities") // ["text", "image", "audio"]
+  openWeights      Boolean   @default(false) @map("open_weights")
+
+  // Pricing (in dollars per million tokens)
+  inputCostPer1M     Float? @map("input_cost_per_1m")
+  outputCostPer1M    Float? @map("output_cost_per_1m")
+  reasoningCostPer1M Float? @map("reasoning_cost_per_1m") // For reasoning models
+  cacheReadPer1M     Float? @map("cache_read_per_1m") // Cache read cost
+  cacheWritePer1M    Float? @map("cache_write_per_1m") // Cache write cost
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  provider     Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  evaluations  Evaluation[]
+  fingerprints Fingerprint[]
+
+  @@unique([providerId, name])
+  @@map("models")
+}
+
+model Evaluation {
+  id              String           @id @default(cuid())
+  modelId         String           @map("model_id")
+  sessionId       String?          @map("session_id") // Group related evaluations
+  testType        String           @default("quantization_detection") @map("test_type")
+  status          EvaluationStatus @default(PENDING)
+  startedAt       DateTime         @default(now()) @map("started_at")
+  completedAt     DateTime?        @map("completed_at")
+  duration        Int? // Duration in seconds
+  totalTests      Int              @default(0) @map("total_tests")
+  successfulTests Int              @default(0) @map("successful_tests")
+  failedTests     Int              @default(0) @map("failed_tests")
+  errorMessage    String?          @map("error_message")
+  metadata        Json? // Additional evaluation parameters
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  model        Model         @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  fingerprints Fingerprint[]
+
+  @@map("evaluations")
+}
+
+model Fingerprint {
+  id            String   @id @default(cuid())
+  checksum      String // Blake2b hash of the final sentence
+  finalSentence String   @map("final_sentence") // Complete final sentence generated
+  modelId       String   @map("model_id")
+  evaluationId  String?  @map("evaluation_id")
+  timestamp     DateTime @default(now())
+
+  model      Model            @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  prompts    PromptResponse[]
+
+  @@index([checksum, timestamp])
+  @@index([modelId, timestamp])
+  @@index([evaluationId, timestamp])
+  @@map("fingerprints")
+}
+
+model PromptResponse {
+  id              String   @id @default(cuid())
+  fingerprintId   String   @map("fingerprint_id")
+  stepNumber      Int      @map("step_number") // 1-10 for the progressive sentence steps
+  prompt          String // The actual prompt sent to the model
+  rawResponse     String   @map("raw_response") // Raw response from the model
+  extractedAnswer String   @map("extracted_answer") // The extracted answer (or "ERROR")
+  responseTime    Int?     @map("response_time") // Response time in milliseconds
+  timestamp       DateTime @default(now())
+
+  fingerprint Fingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
+
+  @@unique([fingerprintId, stepNumber])
+  @@map("prompt_responses")
+}
+
+enum EvaluationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

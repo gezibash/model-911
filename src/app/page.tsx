@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { env } from "../env";
 
 export default function Home() {
   return (
@@ -22,6 +23,9 @@ export default function Home() {
           </li>
           <li className="tracking-[-.01em]">
             Save and see your changes instantly.
+          </li>
+          <li className="tracking-[-.01em] mt-2">
+            Environment test: {env.NEXT_PUBLIC_APP_URL || "Not set"}
           </li>
         </ol>
 

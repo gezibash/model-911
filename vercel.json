@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/evals/models/cmfe1gk4r0062sba45b47gilw",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
