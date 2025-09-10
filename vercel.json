@@ -40,6 +40,10 @@
     {
       "path": "/api/evals/models/cmfe1gk4p002gsba4ifki0qrp",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4p002xsba4wd1hs5vl",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

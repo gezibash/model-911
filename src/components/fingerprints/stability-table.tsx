@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDistanceToNow } from "date-fns";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import Image from "next/image";
 
 interface FingerprintMetric {
   modelId: string;
@@ -25,10 +28,15 @@ interface FingerprintMetric {
   currentFingerprint: string | null;
 }
 
+type SortField = "provider" | "modelName" | "stabilityScore";
+type SortDirection = "asc" | "desc";
+
 export function FingerprintStabilityTable() {
   const [metrics, setMetrics] = useState<FingerprintMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -46,6 +54,79 @@ export function FingerprintStabilityTable() {
 
     fetchMetrics();
   }, []);
+
+  // Provider logo component
+  const ProviderLogo = ({ provider }: { provider: string }) => {
+    const logoUrl = `https://models.dev/logos/${provider.toLowerCase()}.svg`;
+
+    return (
+      <div className="flex items-center space-x-2">
+        <Image
+          src={logoUrl}
+          alt={`${provider} logo`}
+          width={16}
+          height={16}
+          className="flex-shrink-0"
+          onError={(e) => {
+            // Hide the image if it fails to load
+            e.currentTarget.style.display = "none";
+          }}
+        />
+        <span className="text-gray-600">{provider}</span>
+      </div>
+    );
+  };
+
+  // Sorting logic
+  const sortedMetrics = useMemo(() => {
+    if (!sortField) return metrics;
+
+    return [...metrics].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortField) {
+        case "provider":
+          aValue = a.provider.toLowerCase();
+          bValue = b.provider.toLowerCase();
+          break;
+        case "modelName":
+          aValue = a.modelName.toLowerCase();
+          bValue = b.modelName.toLowerCase();
+          break;
+        case "stabilityScore":
+          aValue = a.stabilityScore;
+          bValue = b.stabilityScore;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [metrics, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-2 h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-2 h-4 w-4" />
+    );
+  };
 
   const getStatusBadge = (status: FingerprintMetric["status"]) => {
     const variants = {
@@ -165,10 +246,34 @@ export function FingerprintStabilityTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Provider</TableHead>
-                <TableHead>Model</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("provider")}
+                    className="flex items-center hover:text-foreground transition-colors"
+                  >
+                    Provider
+                    <SortIcon field="provider" />
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("modelName")}
+                    className="flex items-center hover:text-foreground transition-colors"
+                  >
+                    Model
+                    <SortIcon field="modelName" />
+                  </button>
+                </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Stability Score</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("stabilityScore")}
+                    className="flex items-center hover:text-foreground transition-colors"
+                  >
+                    Stability Score
+                    <SortIcon field="stabilityScore" />
+                  </button>
+                </TableHead>
                 <TableHead>Changes/Day</TableHead>
                 <TableHead>Unique Fingerprints</TableHead>
                 <TableHead>Total Evaluations</TableHead>
@@ -177,9 +282,11 @@ export function FingerprintStabilityTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {metrics.map((metric) => (
+              {sortedMetrics.map((metric) => (
                 <TableRow key={metric.modelId} className="hover:bg-muted/50">
-                  <TableCell>{metric.provider}</TableCell>
+                  <TableCell>
+                    <ProviderLogo provider={metric.provider} />
+                  </TableCell>
                   <TableCell className="font-medium">
                     {metric.modelName}
                   </TableCell>
@@ -213,7 +320,9 @@ export function FingerprintStabilityTable() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {metric.lastChange
-                      ? new Date(metric.lastChange).toLocaleDateString()
+                      ? formatDistanceToNow(new Date(metric.lastChange), {
+                          addSuffix: true,
+                        })
                       : "Never"}
                   </TableCell>
                 </TableRow>
