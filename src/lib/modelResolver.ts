@@ -2,6 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { openai } from "@ai-sdk/openai";
+import { xai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 import { prisma } from "./prisma";
 
@@ -30,6 +31,9 @@ export async function resolveAIModel(modelId: string): Promise<LanguageModel> {
 
     case "mistral":
       return mistral(model.name);
+
+    case "xai":
+      return xai(model.name);
 
     default:
       throw new Error(`Unsupported provider: ${model.provider.name}`);

@@ -10,6 +10,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
     OPENAI_API_KEY: z.string().min(1),
     ANTHROPIC_API_KEY: z.string().min(1),
+    XAI_API_KEY: z.string().min(1),
     CRON_SECRET: z.string().min(1).optional(),
   },
   /*
@@ -32,6 +33,7 @@ export const env = createEnv({
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    XAI_API_KEY: process.env.XAI_API_KEY,
     CRON_SECRET: process.env.CRON_SECRET,
   },
 });
