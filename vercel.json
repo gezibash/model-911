@@ -12,6 +12,14 @@
     {
       "path": "/api/evals/models/cmfe1gk4r005vsba4kisycjjp",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4o001osba4l3w0huvs",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/evals/models/cmfe1gk4o001esba4qxpvtmu6",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
